@@ -33,42 +33,35 @@ class DouyinHook : IXposedHookLoadPackage {
             Log.d(TAG, "Douyin found!")
 
             XposedHelpers.findAndHookMethod(Application::class.java, "attach", Context::class.java, object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
+                override fun afterHookedMethod(parentParam: MethodHookParam) {
                     Log.d(TAG, "After attach application.")
 
-                    val classLoader = (param.args[0] as Context).classLoader
+                    val classLoader = (parentParam.args[0] as Context).classLoader
                     val aweme: Class<*>? = classLoader.loadClass("com.ss.android.ugc.aweme.feed.model.Aweme")
                     val clazz: Class<*>? = classLoader.loadClass("com.ss.android.ugc.trill.share.a.c")
+                    val likeListenerClass: Class<*>? = classLoader.loadClass("com.ss.android.ugc.aweme.feed.ui.at\$1")
+                    val atClass: Class<*>? = classLoader.loadClass("com.ss.android.ugc.aweme.feed.ui.at")
+                    var shareObj: Any? = null
 
-                    if (aweme != null && clazz != null) {
+                    if (aweme != null && clazz != null && likeListenerClass != null) {
                         // 去水印，下载更快，文件更小，清晰度不变
                         XposedHelpers.findAndHookMethod(clazz, "share", aweme, String::class.java, Boolean::class.java, object : XC_MethodHook() {
                             override fun beforeHookedMethod(param: MethodHookParam) {
-                                super.beforeHookedMethod(param);
-
                                 Log.d(TAG, "Hook before share.")
                                 Log.d(TAG, "Param[0]: ${param.args[0]}\nParam[1]: ${param.args[1]}\nParam[2]: ${param.args[2]}")
-
                                 param.args[2] = true
+                                shareObj = param.thisObject as Any
+                            }
+                        })
 
-//                                val videoMethod = param.args[0]::class.java.getMethod("getVideo")
-//                                val videoObj = videoMethod.invoke(param.args[0])
-//                                Log.d(TAG, "VideoObj: $videoObj")
-//
-//                                val playAddrMethod = videoObj::class.java.getMethod("getPlayAddr")
-//                                val playAddrObj = playAddrMethod.invoke(videoObj)
-//                                val playUrlListMethod = playAddrObj::class.java.getMethod("getUrlList")
-//                                val playUrlList : MutableList<String> = playUrlListMethod.invoke(playAddrObj) as MutableList<String>
-//                                Log.d(TAG, "playUrlList: $playUrlList")
-//
-//                                val downAddrMethod = videoObj::class.java.getMethod("getDownloadAddr")
-//                                val downAddrObj = downAddrMethod.invoke(videoObj)
-//                                val downUrlListMethod = downAddrObj::class.java.getMethod("getUrlList")
-//                                val downUrlList : MutableList<String> = downUrlListMethod.invoke(downAddrObj) as MutableList<String>
-//                                Log.d(TAG, "downUrlList: $downUrlList")
-//
-//                                downUrlList.clear()
-//                                downUrlList.addAll(playUrlList)
+                        // 点赞自动下载视频
+                        XposedHelpers.findAndHookMethod(atClass, "handleDiggClick", aweme, object : XC_MethodHook() {
+                            override fun beforeHookedMethod(diggParam: MethodHookParam) {
+                                Log.d(TAG, "Hook before atClass.handleDiggClick.")
+                                Log.d(TAG, "Param[0]: ${diggParam.args[0]}")
+
+                                val shareMethod = clazz.getMethod("share", aweme, Boolean::class.java)
+                                shareMethod.invoke(shareObj, diggParam.args[0], false)
                             }
                         })
                     }
