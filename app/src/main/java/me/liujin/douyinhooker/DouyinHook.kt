@@ -22,9 +22,9 @@ class DouyinHook : IXposedHookLoadPackage {
             "getSimCountryIso",
             object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    val country = "KR"
+                    val country = PreferenceUtils.region()
                     param.result = country
-                    // Log.d(TAG, "Change country to: $country")
+                     Log.d(TAG, "Change country to: $country")
                 }
             }
         )
@@ -45,25 +45,37 @@ class DouyinHook : IXposedHookLoadPackage {
 
                     if (aweme != null && clazz != null && likeListenerClass != null) {
                         // 去水印，下载更快，文件更小，清晰度不变
-                        XposedHelpers.findAndHookMethod(clazz, "share", aweme, String::class.java, Boolean::class.java, object : XC_MethodHook() {
-                            override fun beforeHookedMethod(param: MethodHookParam) {
-                                Log.d(TAG, "Hook before share.")
-                                Log.d(TAG, "Param[0]: ${param.args[0]}\nParam[1]: ${param.args[1]}\nParam[2]: ${param.args[2]}")
-                                param.args[2] = true
-                                shareObj = param.thisObject as Any
-                            }
-                        })
+                        if (PreferenceUtils.isDisabledWatermark()) {
+                            XposedHelpers.findAndHookMethod(clazz, "share", aweme, String::class.java, Boolean::class.java, object : XC_MethodHook() {
+                                override fun beforeHookedMethod(param: MethodHookParam) {
+                                    Log.d(TAG, "Hook before share.")
+                                    Log.d(TAG, "Param[0]: ${param.args[0]}\nParam[1]: ${param.args[1]}\nParam[2]: ${param.args[2]}")
+                                    param.args[2] = true
+                                    shareObj = param.thisObject as Any
+                                }
+                            })
+                        } else {
+                            XposedHelpers.findAndHookMethod(clazz, "share", aweme, String::class.java, Boolean::class.java, object : XC_MethodHook() {
+                                override fun beforeHookedMethod(param: MethodHookParam) {
+                                    Log.d(TAG, "Hook before share.")
+                                    Log.d(TAG, "Param[0]: ${param.args[0]}\nParam[1]: ${param.args[1]}\nParam[2]: ${param.args[2]}")
+                                    shareObj = param.thisObject as Any
+                                }
+                            })
+                        }
 
                         // 点赞自动下载视频
-                        XposedHelpers.findAndHookMethod(atClass, "handleDiggClick", aweme, object : XC_MethodHook() {
-                            override fun beforeHookedMethod(diggParam: MethodHookParam) {
-                                Log.d(TAG, "Hook before atClass.handleDiggClick.")
-                                Log.d(TAG, "Param[0]: ${diggParam.args[0]}")
+                        if (PreferenceUtils.autosave()) {
+                            XposedHelpers.findAndHookMethod(atClass, "handleDiggClick", aweme, object : XC_MethodHook() {
+                                override fun beforeHookedMethod(diggParam: MethodHookParam) {
+                                    Log.d(TAG, "Hook before atClass.handleDiggClick.")
+                                    Log.d(TAG, "Param[0]: ${diggParam.args[0]}")
 
-                                val shareMethod = clazz.getMethod("share", aweme, Boolean::class.java)
-                                shareMethod.invoke(shareObj, diggParam.args[0], false)
-                            }
-                        })
+                                    val shareMethod = clazz.getMethod("share", aweme, Boolean::class.java)
+                                    shareMethod.invoke(shareObj, diggParam.args[0], false)
+                                }
+                            })
+                        }
                     }
                 }
             })

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory>
+        <ListPreference
+                android:dialogTitle="@string/settings_region_dialog_title"
+                android:entries="@array/settings_region_entries"
+                android:entryValues="@array/settings_region_entryValues"
+                android:key="@string/settings_region_list_pref"
+                android:title="@string/settings_region_title"
+                android:defaultValue="KR"
+        />
+        <CheckBoxPreference
+                android:title="@string/settings_isDisabledWatermark_title"
+                android:key="@string/settings_isDisabledWatermark_checkbox_pref"
+                android:defaultValue="true"
+        />
+        <CheckBoxPreference
+                android:title="@string/settings_autosave_title"
+                android:key="@string/settings_autosave_checkbox_pref"
+                android:defaultValue="true"
+        />
+    </PreferenceCategory>
+</PreferenceScreen>
